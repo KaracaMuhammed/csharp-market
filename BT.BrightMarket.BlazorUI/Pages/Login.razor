@@ -1,0 +1,144 @@
+﻿@page "/"
+@layout LoginLayout
+@inject NavigationManager NavigationManager
+
+<style>
+
+    .logo {
+        max-width: 340px; /* Adjust the maximum width of the logo */
+    }
+
+    .centered {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 90vh;
+    }
+
+    .container {
+        padding: 0px;
+        background-color: #fff;
+        width: 900px;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        height: 450px;
+        display: flex;
+    }
+
+    .left-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 20px;
+    }
+
+    .right-panel {
+        flex: 1.1;
+        background-color: #f6cb09;
+        width: 100%;
+        padding: 20px; /* Added padding */
+        display: flex;
+        align-items: center;
+    }
+
+        .right-panel h3 {
+            color: #363636;
+            font-weight: bold;
+        }
+
+        .right-panel p {
+            color: #363636;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        .left-panel h4 {
+            color: #363636;
+            margin-bottom: 5px;
+
+        }
+
+    .button {
+        background-color: #f6cb09;
+        color: #363636;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        font-weight: 600;
+    }
+
+        .button:hover {
+            background-color: #d1a800;
+        }
+
+
+
+    .login-form {
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 2rem;
+        margin-bottom: 15px;
+    }
+
+    .footer-text {
+        margin-top: 15px;
+    }
+
+    .footer-link {
+        color: #f6cb09;
+        /* font-weight: bold; */
+    }
+
+</style>
+
+<AuthorizeView>
+    <Authorized>
+        @{
+            NavigationManager.NavigateTo("/products");
+        }
+    </Authorized>
+    <NotAuthorized>
+        <div class="centered">
+            <div>
+                <img src="images/bright-logo.png" alt="Zoekertjes Platform Logo" class="logo">
+            </div>
+
+            <div class="container">
+                <div class="left-panel">
+                    <h4>Zoekertjes Platform</h4>
+                    <button @onclick="Authenticate" class="button">Aanmelden</button>
+                </div>
+
+                <div class="right-panel">
+                    <div class="information">
+                        <h3>Welkom bij het Zoekertjes Platform van Brightest</h3>
+                        <p>Dit is de interne zoekertjes platform van Brightest, waar je op een veilige en betrouwbare manier tweedehands producten kunt kopen en verkopen, diensten kunt verlenen en zoekertjes kunt plaatsen.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-text">
+@*                 Website gedeveloped door Muhammed Karaca website nodig? Bel 0483444341 tussen 08:00u en 16:00u.
+ *@                Geïnteresseerd in testing? Bezoek ook onze  <a href="https://www.brightest.be" class="footer-link">Brightest</a> website!
+            </div>
+
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+
+@code {
+    private void Authenticate()
+    {
+        NavigationManager.NavigateTo("/authentication/login");
+    }
+}

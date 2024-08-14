@@ -1,0 +1,125 @@
+﻿
+.outer-container {
+
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: start;
+    padding: 10px;
+    max-width: 1250px;
+    background-color: #FFFFFF;
+    border-radius: 25px;
+    position: relative;
+}
+
+.left-section, .right-section {
+    padding: 10px;
+}
+
+.left-section {
+    flex: 1.5;
+    margin-right: 5px;
+}
+
+.right-section {
+    flex: 1;
+    margin-left: 5px;
+}
+
+.carousel-inner,
+.carousel-item,
+.carousel-item img {
+    height: 500px;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 15px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.product-details {
+}
+
+    .product-details h2 {
+        font-size: 2em;
+        margin-bottom: 0.5em;
+    }
+
+    .product-details h3 {
+        font-size: 1.5em;
+        color: #333;
+    }
+
+    .product-details p {
+        font-size: 1em;
+        color: #666;
+    }
+
+.interest-button {
+    position: absolute;
+    padding: 10px 20px;
+    background-color: #F4C709;
+    border: none;
+    font-size: 1em;
+    color: #fff;
+    cursor: pointer;
+    text-decoration: none;
+    width: calc(100% - 20px);
+    border-radius: 15px;
+    bottom: 0px;
+    font-weight: bold;
+}
+
+    .interest-button:hover {
+        background-color: #d1a800;
+    }
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    filter: invert(1);
+}
+
+.return-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+    .return-icon:hover {
+        background-color: #d1a800;
+    }
+
+    .return-icon i {
+        vertical-align: middle;
+    }
+
+
+.right-section {
+    margin-left: 5px;
+    position: relative;
+    margin-right: 10px;
+    height: 500px;
+    padding-top: 20px; /* Pushes the title down */
+}
+
+.return-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    border: none;
+    background-color: #F4C709;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    color: white;
+    z-index: 5;
+}
+
+    .return-button:hover {
+        background-color: #d1a800;
+    }

@@ -1,0 +1,220 @@
+﻿@page "/products"
+
+@using BT.BrightMarket.BlazorUI.Interfaces
+@using BT.BrightMarket.Shared.DTOs
+@using BT.BrightMarket.Shared.Models.Products
+@using System.Diagnostics
+@using System.Net
+
+@inject IProductService productService
+@inject IImageService imageService
+@inject IUserService userService
+@inject ICategoryService categoryService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>Aanbiedingen</h3>
+
+<div class="input-container">
+    <div class="input-item">
+        <input @bind="searchQuery" @oninput="OnSearchQueryChanged" class="search-input" placeholder="Zoek aanbieding op..." />
+        <i class="fas fa-search input-icon"></i>
+    </div>
+
+    <div class="input-item">
+        <select @onchange="OnSortOrderChanged" class="search-input" style="width: 12rem;">
+            <option value="none">Prijs</option>
+            <option value="asc">Prijs: laag naar hoog</option>
+            <option value="desc">Prijs: hoog naar laag</option>
+        </select>
+        <i class="fas fa-euro-sign input-icon"></i>
+    </div>
+
+    <div class="input-item">
+        <select @onchange="OnCategoryChanged" class="search-input">
+            <option value="Alle">Alle categorieën</option>
+            @foreach (var category in categories)
+            {
+                <option value="@category.Name">@category.Name</option>
+            }
+        </select>
+        <i class="fas fa-angle-down input-icon"></i>
+    </div>
+
+    <div class="input-item">
+        <select @onchange="OnItemTypeChanged" class="search-input">
+            <option value="Undefined">Alle aanbiedingen</option>
+            <option value="Product">Producten</option>
+            <option value="Service">Diensten</option>
+            <option value="Request">Zoekertjes</option>
+        </select>
+        <i class="fas fa-angle-down input-icon"></i>
+    </div>
+</div>
+
+
+@if (allProducts != null)
+{
+    @if (filteredProducts.Count <= 0)
+    {
+        <div class="empty-product">
+            Momenteel is er geen enkel aanbieding!
+        </div>
+    }
+
+    <div class="container">
+        @foreach (var product in filteredProducts)
+        {
+            <div class="item">
+                <div class="image-section">
+                    @if (product.FirstImage != null)
+                    {
+                        <img src="@($"data:image;base64,{product.FirstImage.Data}")" alt="Product Image" />
+                    }
+                    else
+                    {
+                        <div class="loading-indicator">
+                            <i class="fas fa-circle-notch fa-spin loading-icon"></i>
+                        </div>
+                    }
+                </div>
+                <div class="info">
+                    <b>@product.Name</b><br />
+                    <text>€@product.Price</text><br />
+                    <text>@product.User.Region.Name</text> <span class="fas fa-map-marker-alt"></span><br />
+                    <span style="font-style: italic;">@product.Category.Name</span><br />
+                    <button type="submit" class="edit-button" @onclick="() => DetailedProduct(product.Id)">
+                        Bekijk
+                        <i class="fas fa-angle-right icon"></i>
+                    </button>
+                </div>
+            </div>
+        }
+
+        <!-- fill empty slots with empty product items -->
+        @for (int i = filteredProducts.Count % 4; i < 4; i++)
+        {
+            <div class="empty-item"></div>
+        }
+    </div>
+}
+else
+{
+    <p>Aanbiedingen worden ingeladen...</p>
+}
+
+@code {
+
+    private List<Product> allProducts;
+    private List<Product> filteredProducts;
+
+    // filtering properties
+    private string searchQuery = string.Empty;
+    private string selectedCategory = "Alle";
+    private List<Category> categories = new List<Category>();
+    private string sortOrder = "none";
+    private ItemType selectedItemType = ItemType.Undefined;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            allProducts = await productService.GetAllActiveProductsAsync(ItemType.Undefined);
+            filteredProducts = new List<Product>(allProducts); // Initialize filteredProducts
+
+            categories = await categoryService.GetAllCategoriesAsync();
+        }
+        catch (Exception) { }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        int counter = 0;
+        foreach (var product in allProducts)
+        {
+            product.FirstImage = await GetFirstProductImage(product.Id);
+            counter++;
+
+            if (counter == 20)
+            {
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task<Image> GetFirstProductImage(int productId)
+    {
+        try
+        {
+            return await imageService.GetFirstImageByProductId(productId);
+        }
+        catch (Exception ex)
+        {
+            // Handle exception
+            Console.WriteLine($"Error retrieving image for product ID {productId}: {ex.Message}");
+            return null;
+        }
+    }
+
+    private void DetailedProduct(int userId)
+    {
+        NavigationManager.NavigateTo($"/products/single-product/{userId}");
+    }
+
+
+    // filtering methods
+
+    private void OnSearchQueryChanged(ChangeEventArgs e)
+    {
+        searchQuery = e.Value.ToString();
+        ApplyFilters();
+    }
+
+    private void OnCategoryChanged(ChangeEventArgs e)
+    {
+        selectedCategory = e.Value.ToString();
+        ApplyFilters();
+    }
+
+    private void OnSortOrderChanged(ChangeEventArgs e)
+    {
+        sortOrder = e.Value.ToString();
+        ApplyFilters(); // Reapply filters and sorting
+    }
+
+    private void OnItemTypeChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<ItemType>(e.Value.ToString(), out ItemType result))
+        {
+            selectedItemType = result;
+            ApplyFilters();
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        if (searchQuery.Length >= 3 || searchQuery.Length == 0)
+        {
+            filteredProducts = allProducts
+                .Where(p => (string.IsNullOrWhiteSpace(searchQuery) ||
+                            p.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                            p.Price.ToString().Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                            p.Category.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                            p.User.Region.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) &&
+                            (selectedCategory == "Alle" || p.Category.Name == selectedCategory) &&
+                            (selectedItemType == ItemType.Undefined || p.ItemType == selectedItemType))
+                .ToList();
+
+            if (sortOrder == "asc")
+            {
+                filteredProducts = filteredProducts.OrderBy(p => p.Price).ToList();
+            }
+            else if (sortOrder == "desc")
+            {
+                filteredProducts = filteredProducts.OrderByDescending(p => p.Price).ToList();
+            }
+
+            StateHasChanged();
+        }
+    }
+}

@@ -1,0 +1,26 @@
+﻿@using BT.BrightMarket.BlazorUI.Interfaces;
+@using BT.BrightMarket.Shared.Models.Users;
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Inject]
+    private IUserService UserService { get; set; }
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+
+    private bool IsAdmin { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await UserService.GetPersonalUserAsync();
+        IsAdmin = user?.Role == Role.Admin;
+    }
+}
+
+@if (IsAdmin)
+{
+    @ChildContent
+}

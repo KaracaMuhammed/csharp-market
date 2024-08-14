@@ -1,0 +1,236 @@
+﻿@page "/conversations/chat/{conversationId:int}"
+
+@using BT.BrightMarket.BlazorUI.Interfaces
+@using BT.BrightMarket.Shared.DTOs;
+@using BT.BrightMarket.Shared.Models.Conversations
+@using BT.BrightMarket.Shared.Models.Products
+@using BT.BrightMarket.Shared.Models.Users
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavigationManager
+@inject IUserService userService
+@inject IConversationService conversationService
+@inject IMessageService messageService
+@inject IImageService imageService
+@inject IJSRuntime JSRuntime
+
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
+
+<style>
+    .notification {
+        visibility: hidden;
+    }
+</style>
+
+@if (currentConversation != null)
+{
+    <div class="center">
+        <div class="chat">
+            <div class="contact bar">
+                @if (currentConversation.Product != null && currentConversation.Product.FirstImage != null)
+                {
+                    <img class="pic" src="@($"data:image;base64,{currentConversation.Product.FirstImage.Data}")" alt="Product Image">
+                }
+
+                <div class="name">
+                    @oppositeUser.Name
+                </div>
+
+                <div class="seen">
+                    @currentConversation.Product.Name €@currentConversation.Product.Price
+                </div>
+            </div>
+
+            <div class="messages" id="chat">
+
+                @for (int i = 0; i < messages.Count; i++)
+                {
+                    var currentMessage = messages[i];
+                    Message previousMessage;
+                    var timeDifferenceMinutes = 0.0;
+                    string formattedTime = "";
+
+                    if (i != 0)
+                    {
+                        previousMessage = messages[i - 1];
+                        timeDifferenceMinutes = (currentMessage.TimeStamp - previousMessage.TimeStamp).TotalMinutes;
+                    }
+
+                    if (i == 0 || timeDifferenceMinutes > 1)
+                    {
+                        if (currentMessage.TimeStamp.Date == DateTime.UtcNow.Date)
+                        {
+                            formattedTime = "Vandaag " + currentMessage.TimeStamp.ToString("HH:mm");
+                        }
+                        else if (currentMessage.TimeStamp.Date == DateTime.UtcNow.Date.AddDays(-1))
+                        {
+                            formattedTime = "Gisteren " + currentMessage.TimeStamp.ToString("HH:mm");
+                        }
+                        else
+                        {
+                            formattedTime = currentMessage.TimeStamp.ToString("dd/MM/yyyy HH:mm");
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(formattedTime))
+                    {
+                        <div class="time">
+                            @formattedTime
+                        </div>
+                    }
+
+                    if (currentMessage.SenderId == personalUser.Id)
+                    {
+                        <div class="message sender">
+                            @currentMessage.Text
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="message">
+                            @currentMessage.Text
+                        </div>
+                    }
+                }
+
+            </div>
+            <div class="input">
+                <input @bind="messageInput" placeholder="Typ hier je bericht!" maxlength="400" type="text" @onkeyup="SendMessageOnEnter" />
+                <i @onclick="SendMessageOnClick" class="fas fa-paper-plane" disabled="@(hubConnection.State == HubConnectionState.Disconnected)"></i>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <p>Gesprek wordt ingeladen...</p>
+}
+
+
+<script>
+    async function scrollToBottom() {
+        const chat = document.getElementById('chat');
+        if (!chat) {
+            // if chat element is not found, wait for a short delay and try again
+            await new Promise(resolve => setTimeout(resolve, 50));
+            scrollToBottom(); // repeat the function call
+            return;
+        }
+        chat.scrollTop = chat.scrollHeight;
+    }
+</script>
+
+
+@code {
+
+    private User personalUser;
+    private User oppositeUser;
+
+    private HubConnection hubConnection;
+    [Parameter] public int conversationId { get; set; }
+    private DateTime currentTime;
+    private int currentPage = 1;
+
+    private Conversation currentConversation;
+    private List<Message> messages = new List<Message>();
+    private string messageInput = string.Empty; // Initialize to ensure proper binding
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentConversation = await conversationService.GetConversationByIdAsync(conversationId);
+
+        if (currentConversation == null)
+        {
+            NavigationManager.NavigateTo("/notfound");
+            return;
+        }
+
+        messages = await messageService.GetMessagesByConversationId(conversationId, currentPage, 150);
+        currentConversation.Product.FirstImage = await GetFirstProductImage(currentConversation.ProductId);
+        personalUser = await userService.GetPersonalUserAsync();
+
+        // retrieve opposite user
+        if (currentConversation.BuyerId != personalUser.Id)
+        {
+            oppositeUser = currentConversation.Buyer;
+        }
+        else
+        {
+            oppositeUser = currentConversation.Product.User;
+        }
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl($"http://localhost:5000/chathub?userId={personalUser.Id}")
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<Message>("message", (message) =>
+        {
+            if (message.ConversationId == currentConversation.Id) // show incoming message if it is destined to this conversation
+            {
+                messages.Add(message);
+                StateHasChanged();
+                JSRuntime.InvokeVoidAsync("scrollToBottom");
+            }
+        });
+
+        await hubConnection.StartAsync();
+
+        hubConnection.Closed += async (e) =>
+        {
+            await hubConnection.StartAsync();
+        };
+    }
+
+    private async Task<Image> GetFirstProductImage(int productId)
+    {
+        try
+        {
+            return await imageService.GetFirstImageByProductId(productId);
+        }
+        catch (Exception ex)
+        {
+            return new Image();
+        }
+    }
+
+    private async Task SendMessageOnEnter(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task SendMessageOnClick()
+    {
+        await SendMessage();
+    }
+
+    private async Task SendMessage()
+    {
+        try
+        {
+            // check if the hub connection is in a connected state before sending the message
+            if (hubConnection.State == HubConnectionState.Connected)
+            {
+                if (!string.IsNullOrEmpty(messageInput))
+                {
+                    await messageService.CreateMessageAsync(new MessageDTO() { Text = messageInput, ConversationId = conversationId });
+                    messageInput = string.Empty;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("scrollToBottom");
+        }
+    }
+}

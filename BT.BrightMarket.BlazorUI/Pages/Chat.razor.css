@@ -1,0 +1,194 @@
+﻿
+.pic {
+    width: 4.2rem;
+    height: 4.2rem;
+    background-size: cover;
+    background-position: center;
+    border-radius: 50%;
+    overflow: hidden; /* Clip the image to the circle */
+    object-fit: cover;
+    box-shadow: 0 3px 4px rgba(0, 0, 0, 0.1);
+}
+
+.contact {
+    position: relative;
+    margin-bottom: 1rem;
+    padding-left: 5rem;
+    height: 4.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+    .contact .pic {
+        position: absolute;
+        left: 0;
+    }
+
+.seen {
+    margin-top: 0;
+    color: #666;
+    font-size: medium;
+}
+
+.contacts h2 {
+    margin: 0.5rem 0 1.5rem 5rem;
+}
+
+.contacts .fa-bars {
+    position: absolute;
+    left: 2.25rem;
+    color: #999;
+    transition: color 200ms;
+}
+
+    .contacts .fa-bars:hover {
+        color: #666;
+    }
+
+.contacts .contact:last-child {
+    margin: 0;
+}
+
+.contacts:hover {
+    transform: translate(-23rem, -50%);
+}
+
+.chat {
+    margin-top: -10px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 85%;
+    height: 75vh;
+    margin-left: auto;
+    margin-right: auto;
+    z-index: 2;
+    box-sizing: border-box;
+    border-radius: 1rem;
+    background: white;
+    box-shadow: 0 0 8rem 0 rgba(0, 0, 0, 0.1), 0rem 2rem 4rem -3rem rgba(0, 0, 0, 0.5);
+}
+
+    .chat .contact.bar {
+        flex-basis: 3.5rem;
+        flex-shrink: 0;
+        margin: 1rem;
+        box-sizing: border-box;
+    }
+
+    .chat .messages {
+        padding: 1rem;
+        background: #F7F7F7;
+        height: 100%;
+        flex-shrink: 2;
+        overflow-y: auto;
+        box-shadow: inset 0 2rem 2rem -2rem rgba(0, 0, 0, 0.05), inset 0 -2rem 2rem -2rem rgba(0, 0, 0, 0.05);
+    }
+
+        .chat .messages .time {
+            font-size: 0.8rem;
+            background: #EEE;
+            padding: 0.25rem 1rem;
+            border-radius: 2rem;
+            color: #999;
+            width: -webkit-fit-content;
+            width: -moz-fit-content;
+            width: fit-content;
+            margin: 0 auto;
+            margin-top: 5px;
+        }
+
+        .chat .messages .message {
+            box-sizing: border-box;
+            padding: 0.5rem 1rem;
+            margin: 5px;
+            background: #FFF;
+            border-radius: 1.125rem 1.125rem 1.125rem 0;
+            min-height: 2.25rem;
+            width: -webkit-fit-content;
+            width: -moz-fit-content;
+            width: fit-content;
+            max-width: 66%;
+            box-shadow: 0 0 2rem rgba(0, 0, 0, 0.075), 0rem 1rem 1rem -1rem rgba(0, 0, 0, 0.1);
+        }
+
+            .chat .messages .message.sender {
+                margin: 5px 5px 5px auto;
+                border-radius: 1.125rem 1.125rem 0 1.125rem;
+                background: #F4C709;
+                color: white;
+            }
+
+            .chat .messages .message .typing {
+                display: inline-block;
+                width: 0.5rem;
+                height: 0.5rem;
+                margin-right: 0rem;
+                box-sizing: border-box;
+                background: #ccc;
+                border-radius: 50%;
+            }
+
+                .chat .messages .message .typing.typing-1 {
+                    -webkit-animation: typing 3s infinite;
+                    animation: typing 3s infinite;
+                }
+
+                .chat .messages .message .typing.typing-2 {
+                    -webkit-animation: typing 3s 250ms infinite;
+                    animation: typing 3s 250ms infinite;
+                }
+
+                .chat .messages .message .typing.typing-3 {
+                    -webkit-animation: typing 3s 500ms infinite;
+                    animation: typing 3s 500ms infinite;
+                }
+
+    .chat .input {
+        box-sizing: border-box;
+        flex-basis: 4rem;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        padding: 0 0.5rem 0 1.5rem;
+    }
+
+        .chat .input i {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            color: #666;
+            cursor: pointer;
+            transition: color 200ms;
+        }
+
+            .chat .input i:hover {
+                color: #333;
+            }
+
+        .chat .input input {
+            border: none;
+            background-image: none;
+            background-color: white;
+            padding: 0.5rem 1rem;
+            margin-right: 1rem;
+            border-radius: 1.125rem;
+            flex-grow: 2;
+            box-shadow: 0 0 1rem rgba(0, 0, 0, 0.2), 0rem 1rem 1rem -1rem rgba(0, 0, 0, 0.2);
+            font-family: Red hat Display, sans-serif;
+            font-weight: 400;
+            letter-spacing: 0.025em;
+        }
+
+            .chat .input input:placeholder {
+                color: #999;
+            }
+
+.logout-button {
+    font-weight: medium;
+}
+
+.notification {
+    visibility: hidden;
+}

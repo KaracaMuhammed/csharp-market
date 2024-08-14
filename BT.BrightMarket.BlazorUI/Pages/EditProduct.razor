@@ -1,0 +1,297 @@
+﻿@page "/personal-products/edit-product/{productId:int}"
+@page "/administrator/edit-product/{productId:int}"
+
+@using BT.BrightMarket.BlazorUI.Interfaces
+@using BT.BrightMarket.Shared.DTOs
+@using BT.BrightMarket.Shared.Models.Products
+
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using System.ComponentModel.DataAnnotations
+@using FluentValidation.Results
+
+@inject HttpClient httpClient
+@inject IAccessTokenProvider AccessTokenProvider
+@inject IUserService userService
+@inject ICategoryService categoryService
+@inject IProductService productService
+@inject IImageService imageService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+<style>
+    .edit-button {
+        background-color: #F0F0F0;
+        width: 140px;
+        border: none;
+        border-radius: 25px;
+        height: 36px;
+        line-height: 24px;
+        text-align: center;
+        font-size: small;
+        font-weight: 600;
+    }
+
+        .edit-button:hover {
+            background-color: #e2e2e2;
+        }
+
+    .icon {
+        float: right;
+        background-color: #F4C709;
+        border-radius: 50px;
+        width: 24px;
+        height: 24px;
+        margin-right: 0.8rem;
+        line-height: 24px;
+        font-size: larger;
+    }
+
+    .form-control {
+        margin-bottom: 10px;
+    }
+</style>
+
+<h3>Bewerk aanbieding:</h3>
+
+@if (currentProduct != null)
+{
+    <div style="background-color: #f2f2f2; border-radius: 10px; padding: 20px; background-color: white;  margin: 24px auto; margin: 25px; width: 95%;">
+        <EditForm Model="@currentProduct" OnValidSubmit="@UpdateProduct">
+
+            <DataAnnotationsValidator />
+
+            <label for="name">Productnaam <span style="color: red;">*</span></label><br />
+            <InputText id="name" @bind-Value="@currentProduct.Name" placeholder="Voer hier de productnaam in" class="form-control" />
+
+            <label for="description">Beschrijving</label><br />
+            <InputTextArea id="description" @bind-Value="@currentProduct.Description" cols="60" rows="6" placeholder="Voer hier de beschrijving van het product in" class="form-control" />
+
+            <label for="price">Prijs (munteenheid €) <span style="color: red;">*</span></label><br />
+            <InputNumber id="price" @bind-Value="@currentProduct.Price" step="0.01" TValue="double" class="form-control" />
+
+            <label for="category">Categorie <span style="color: red;">*</span></label><br />
+            <InputSelect id="category" @bind-Value="@currentProduct.CategoryId" class="form-control">
+                <option value="-1">Kies een categorie...</option>
+                @if (allCategories != null)
+                {
+                    @foreach (var category in allCategories)
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                }
+                <option value="0">Andere...</option>
+            </InputSelect>
+
+            @if (currentProduct.CategoryId == 0)
+            {
+                <input type="text" @bind="@newCategory" class="form-control" placeholder="Voer hier een nieuwe categorie in..." maxlength="40" required />
+            }
+
+            <label for="displayDuration">
+                Weergavetijd <span style="font-size: small;">(aanbieding blijft nog <span style="font-weight: bold;">@Math.Ceiling((previousProduct.ExpiryDate - DateTime.UtcNow).TotalDays - 1) dag(en)</span> zichtbaar)</span>
+            </label><br />
+            <InputSelect id="displayDuration" @bind-Value="@currentProduct.DisplayDuration" class="form-control" style="margin-bottom: 5px;">
+                <option value="@Duration.OneMonth">1 Maand (30 dagen)</option>
+                <option value="@Duration.TwoWeeks">2 Weken (14 dagen)</option>
+                <option value="@Duration.OneWeek">1 Week (7 dagen)</option>
+            </InputSelect>
+
+            <div style="margin-bottom: 5px;">
+                <input style="margin-left: 10px;" type="checkbox" class="form-check-input" @bind="resetActiveDays" id="resetActiveDays" />
+                <label class="form-check-label" for="resetActiveDays">Herstart weergavetijd</label>
+            </div>
+
+
+            <label for="images">Afbeelding(en) <span style="color: red;">*</span></label><br />
+            <InputFile id="images" @bind-Value="@newImages" multiple accept="image/*" OnChange="@HandleFileSelected" class="form-control" />
+
+            <!-- display existing images -->
+            @if (currentProduct.Images?.Any() ?? false)
+            {
+                <label>Geselecteerde bestanden:</label>
+                <div>
+                    @foreach (var image in currentProduct.Images)
+                    {
+                        <div style="position: relative; display: inline-block;">
+                            <img src="@($"data:image;base64,{image.Data}")" alt="Product Image" style="width: 140px; margin-bottom: 10px; margin-left: 10px; border-radius: 5px;" />
+                            <button type="button" style="position: absolute; top: 0; right: 0; background: none; border: none; padding: 0; margin: 0; cursor: pointer;" @onclick="() => RemoveImage(image)">
+                                <i class="fas fa-trash-alt" style="color: red; padding: 10px;"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (errorMessages.Any())
+            {
+                <ul class="custom-validation-errors" style="margin-bottom: 0px;">
+                    @foreach (var errorMessage in errorMessages)
+                    {
+                        <li class="validation-message">@errorMessage</li>
+                    }
+                </ul>
+            }
+
+            <ValidationSummary />
+
+            <button type="submit" class="edit-button" style="margin-top: 10px;" disabled="@submitting">
+                Bewerk
+                <i class="fas fa-angle-right icon"></i>
+            </button>
+        </EditForm>
+    </div>
+}
+
+
+@code {
+
+    [Parameter] public int productId { get; set; }
+
+    private List<Category> allCategories;
+    private string newCategory;
+
+    private Product previousProduct;
+    private ProductDTO.PostUpdateObject currentProduct;
+
+    private List<IBrowserFile> newImages = new List<IBrowserFile>();
+    private List<string> errorMessages = new List<string>();
+    private bool submitting = false;
+
+    private string currentUrl;
+    private bool resetActiveDays = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (productId != 0)
+        {
+            previousProduct = await productService.GetProductByIdAsync(productId); // fetch existing product
+
+            if (previousProduct != null)
+            {
+                currentProduct = new ProductDTO.PostUpdateObject // fill the required product information into productDTO object
+                    {
+                        Name = previousProduct.Name,
+                        Description = previousProduct.Description,
+                        Price = previousProduct.Price,
+                        Status = previousProduct.Status,
+                        CategoryId = previousProduct.CategoryId,
+                        DisplayDuration = previousProduct.DisplayDuration,
+                        Images = await LoadProductImages(productId)
+                    };
+            }
+            else
+            {
+                currentProduct = new ProductDTO.PostUpdateObject();
+            }
+        }
+
+        allCategories = await categoryService.GetAllCategoriesAsync(); // fetch product categories
+    }
+
+    private async Task<List<ImageDTO>> LoadProductImages(int productId)
+    {
+        try
+        {
+            return await imageService.GetAllImagesByProductId(productId);
+        }
+        catch (Exception ex)
+        {
+            return new List<ImageDTO>();
+        }
+    }
+
+    private void RemoveImage(ImageDTO image)
+    {
+        currentProduct.Images?.Remove(image);
+
+        if (currentProduct.Images.Count <= 5)
+            errorMessages.Remove("Het maximale aantal toegestane afbeeldingen is 5.");
+
+        if (currentProduct.Images.Count == 0)
+            currentProduct.Images = null;
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var selectedFiles = e.GetMultipleFiles().ToList(); // list with files provided by the file input
+        bool maxSizeErrorShown = false; // used to prevent double error showing (max size error specificly)
+        errorMessages.Clear(); // clear manually handled errors
+
+        if (currentProduct.Images == null)
+        {
+            currentProduct.Images = new List<ImageDTO>();
+        }
+
+        foreach (var file in selectedFiles)
+        {
+            if (!file.ContentType.StartsWith("image"))
+            {
+                errorMessages.Add("Bestand is geen afbeelding.");
+                continue;
+            }
+
+            if (file.Size > 7 * 1024 * 1024 && !maxSizeErrorShown)
+            {
+                maxSizeErrorShown = true;
+                errorMessages.Add("De maximale grootte van de afbeeldingsgegevens is 7 MB.");
+                continue;
+            }
+
+            string base64String;
+            using (var memoryStream = new MemoryStream())
+            {
+                await file.OpenReadStream(maxAllowedSize: 7 * 1024 * 1024).CopyToAsync(memoryStream);
+                var buffer = memoryStream.ToArray();
+                base64String = Convert.ToBase64String(buffer);
+                currentProduct.Images.Add(new ImageDTO { Data = base64String });
+            }
+        }
+
+        if (currentProduct.Images.Count > 5)
+        {
+            errorMessages.Add("Het maximale aantal toegestane afbeeldingen is 5.");
+        }
+
+    }
+
+    private async Task UpdateProduct()
+    {
+        if (errorMessages.Any()) // // prevent product update if there is any manually handled error
+            return;
+
+        try
+        {
+
+            submitting = true; // submit button disabled
+
+            if (currentProduct.CategoryId == 0) // add new category
+            {
+                var result = await categoryService.CreateCategoryAsync(new CategoryDTO.PostCategoryObject() { Name = newCategory });
+                currentProduct.CategoryId = result.Id;
+                newCategory = null;
+            }
+
+            if (resetActiveDays)
+            {
+                await productService.UpdateProductCreationDateAsync(productId);
+            }
+
+            var product = await productService.UpdateProductAsync(productId, currentProduct);
+
+            currentUrl = NavigationManager.Uri;
+            if (currentUrl.Contains("administrator"))
+            {
+                NavigationManager.NavigateTo("/administrator");
+            }
+            else if (currentUrl.Contains("personal-products"))
+            {
+                NavigationManager.NavigateTo("/personal-products");
+            }
+
+        }
+        catch (Exception ex)
+        {
+            submitting = false; // re-enable submit button
+        }
+    }
+}

@@ -1,0 +1,99 @@
+﻿@using BT.BrightMarket.BlazorUI.Checkers
+@using BT.BrightMarket.BlazorUI.Interfaces;
+@using BT.BrightMarket.Shared.Models.Conversations;
+@using BT.BrightMarket.Shared.Models.Users;
+@using Microsoft.AspNetCore.SignalR.Client
+
+@inherits LayoutComponentBase
+
+@inject NavigationManager NavigationManager
+@inject IUserService userService
+@inject IJSRuntime JSRuntime
+
+<AuthorizeView>
+    <Authorized>
+        <div class="page">
+
+            <PersonalUserCheck>
+                <NavMenu />
+            </PersonalUserCheck>
+
+            <main>
+
+                <div id="notification" class="notification">
+                    <span id="notificationMessage"></span>
+                    <button @onclick="HideNotification" class="remove-button">
+                        <i class="fas fa-trash-alt icon"></i>
+                    </button>
+                </div>
+
+                <article class="content px-4">
+                    @Body
+                </article>
+
+            </main>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        @{
+            NavigationManager.NavigateTo("/");
+        }
+    </NotAuthorized>
+</AuthorizeView>
+
+<script>
+    window.showNotification = function (message) {
+        var notification = document.getElementById("notification");
+        var notificationMessage = document.getElementById("notificationMessage");
+        notificationMessage.innerText = message;
+        notification.classList.add("show");
+    }
+
+    window.hideNotification = function () {
+        var notification = document.getElementById("notification");
+        notification.classList.remove("show");
+    }
+</script>
+
+
+@code {
+    
+    private User personalUser;
+    private HubConnection hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        personalUser = await userService.GetPersonalUserAsync();
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl($"http://localhost:5000/notificationhub?userId={personalUser.Id}")
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<Message>("notification", (message) =>
+        {
+            var currentUrl = NavigationManager.Uri;
+            if (!currentUrl.Contains("/conversations/chat"))
+            {
+                // limit Text to 15 characters and append "..." if necessary & invoke JS method to show the notification
+                string incomingMessage = message.Text.Length > 30 ? message.Text.Substring(0, 30) + "..." : message.Text;
+                JSRuntime.InvokeVoidAsync("showNotification", $"Bericht gekregen van {message.Sender.Name}: {incomingMessage}");
+            }
+        });
+
+        await hubConnection.StartAsync();
+
+        hubConnection.Closed += async (e) =>
+        {
+            await hubConnection.StartAsync();
+        };
+
+    }
+
+    private async Task HideNotification()
+    {
+        await JSRuntime.InvokeVoidAsync("hideNotification");
+    }
+
+}

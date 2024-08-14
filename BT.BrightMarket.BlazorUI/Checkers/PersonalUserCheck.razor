@@ -1,0 +1,42 @@
+﻿@using BT.BrightMarket.BlazorUI.Interfaces;
+@using BT.BrightMarket.Shared.Models.Users;
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Inject]
+    private IUserService UserService { get; set; }
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+
+    private bool UserExists { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        try
+        {
+            await Task.Delay(1000);
+            await UserService.GetPersonalUserAsync(); // check once if the user exists at startup
+        }
+        catch (Exception ex)
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (ex.Message.Contains("Failed to retrieve personal user.") && authState.User.Identity.IsAuthenticated)
+            {
+                UserExists = false;
+                NavigationManager.NavigateTo("/register");
+            }
+        }
+
+    }
+}
+
+@if (UserExists)
+{
+    @ChildContent
+}

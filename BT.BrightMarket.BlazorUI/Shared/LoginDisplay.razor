@@ -1,0 +1,44 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject NavigationManager Navigation
+
+<style>
+
+    .logout-button {
+        margin-left: 10px;
+        background-color: #f6cb09;
+        color: #363636;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        font-weight: 500;
+    }
+
+        .logout-button:hover {
+            background-color: #d1a800;
+        }
+
+</style>
+
+<AuthorizeView>
+    <Authorized>
+        Hallo, @context.User.Identity?.Name!
+        <button class="logout-button" @onclick="BeginLogOut">
+            Uitloggen
+            <i class="fas fa-sign-out-alt" style="margin-left: 5px;"></i> 
+        </button>
+    </Authorized>
+@*     <NotAuthorized>
+        <a href="authentication/login">Log in</a>
+    </NotAuthorized> *@
+</AuthorizeView>
+
+@code{
+    public void BeginLogOut()
+    {
+        Navigation.NavigateToLogout("authentication/logout");    
+        Navigation.NavigateTo("/");
+    }
+}

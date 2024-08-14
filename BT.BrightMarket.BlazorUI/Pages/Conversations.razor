@@ -1,0 +1,125 @@
+﻿@page "/conversations"
+
+@using BT.BrightMarket.BlazorUI.Interfaces;
+@using BT.BrightMarket.Shared.Models.Conversations;
+@using BT.BrightMarket.Shared.Models.Products
+@using BT.BrightMarket.Shared.Models.Users;
+
+@inject IProductService productService
+@inject IImageService imageService
+@inject IConversationService conversationService
+@inject IUserService userService;
+@inject NavigationManager NavigationManager
+
+<div class="container">
+
+    <div class="title-section">
+        <h3>Mijn conversaties</h3>
+    </div>
+
+    @if (conversations != null)
+    {
+
+        @if (conversations.Count <= 0)
+        {
+            <div class="empty-conversation">
+                U hebt geen openstaande conversatie, start eerst eentje!
+            </div>
+        }
+
+        @foreach (var conversation in conversations)
+        {
+            <div class="conversation">
+                <div class="conversation-image">
+                    @if (conversation.Product.FirstImage != null)
+                    {
+                        <img src="@($"data:image;base64,{conversation.Product.FirstImage.Data}")" alt="Product Image">
+                    }
+                    else
+                    {
+                        <div class="loading-indicator">
+                            <i class="fas fa-circle-notch fa-spin loading-icon"></i>
+                        </div>
+                    }
+                </div>
+                <div class="conversation-info">
+                    @if (conversation.BuyerId == personalUser.Id)
+                    {
+                        <h3>@conversation.Product.User.Name</h3>
+                    } else
+                    {
+                        <h3>@conversation.Buyer.Name</h3>
+                    }
+                    <p>@conversation.Product.Name €@conversation.Product.Price</p>
+
+                    @if (conversation.LatestMessage != null)
+                    {
+
+                        string latestMessageText = conversation.LatestMessage.Text.Length > 80 ? conversation.LatestMessage.Text.Substring(0, 80) + "..." : conversation.LatestMessage.Text;
+
+                        <p>
+                            <span style="color: #f4c709; font-weight: @(conversation.LatestMessage.SenderId != personalUser.Id ? "bold" : "medium");">
+                                @(conversation.LatestMessage.SenderId != personalUser.Id ? "Laatste bericht: " : "Verzonden: ")
+                            </span>
+                            @latestMessageText
+                        </p>
+                    }
+                    
+                    <button class="open-button" @onclick="() => OpenChat(conversation.Id)">
+                        Bespreek
+                        <i class="fas fa-angle-right icon"></i>
+                    </button>
+                </div>
+                
+            </div>
+        }
+    }
+
+</div>
+
+@code {
+
+    private User personalUser;
+    private List<Conversation> conversations;
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        personalUser = await userService.GetPersonalUserAsync();
+        conversations = await conversationService.GetPersonalConversationsAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        int counter = 0;
+        foreach (var conversation in conversations)
+        {
+            conversation.Product.FirstImage = await GetFirstProductImage(conversation.ProductId);
+            counter++;
+
+            if (counter == 20)
+            {
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task<Image> GetFirstProductImage(int productId)
+    {
+        try
+        {
+            return await imageService.GetFirstImageByProductId(productId);
+        }
+        catch (Exception ex)
+        {
+            // Handle exception
+            Console.WriteLine($"Error retrieving image for product ID {productId}: {ex.Message}");
+            return null;
+        }
+    }
+
+    private void OpenChat(int conversationId)
+    {
+        NavigationManager.NavigateTo($"/conversations/chat/{conversationId}");
+    }
+}

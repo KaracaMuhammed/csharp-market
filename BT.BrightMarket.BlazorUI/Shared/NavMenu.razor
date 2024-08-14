@@ -1,0 +1,63 @@
+﻿@using BT.BrightMarket.BlazorUI.Checkers
+@using BT.BrightMarket.BlazorUI.Interfaces
+@inherits LayoutComponentBase
+
+@inject NavigationManager NavigationManager
+@inject IUserService userService
+
+<nav class="navbar navbar-expand-md mb-4">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <img src="images/bright-logo.png" alt="Zoekertjes Platform Logo" class="logo">
+        <div class="collapse navbar-collapse @NavBarCssClass d-flex justify-content-center" id="navbarCollapse">
+            <ul class="navbar-nav mb-2 mb-md-0">
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="products"> @* Match="NavLinkMatch.All" *@
+@*                         <span class="oi oi-home" aria-hidden="true"></span> 
+ *@                        Home
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="personal-products">
+@*                         <span class="oi oi-person" aria-hidden="true"></span> 
+ *@                        Mijn aanbiedingen
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="conversations">
+@*                         <span class="oi oi-chat" aria-hidden="true"></span> 
+ *@                        Conversaties
+                    </NavLink>
+                </li>
+                
+                <AdminRoleCheck>
+                    <li class="nav-item">
+                        <NavLink class="nav-link" href="administrator">
+@*                             <span class="oi oi-wrench" aria-hidden="true"></span> 
+ *@                            Beheer
+                        </NavLink>
+                    </li>
+                </AdminRoleCheck>
+
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="https://www.brightest.be" target="_blank">
+                        @*                         <span class="oi oi-chat" aria-hidden="true"></span>
+                        *@
+                        Bezoek Brightest
+                    </NavLink>
+                </li>
+            </ul>
+        </div>
+        <LoginDisplay />
+    </div>
+</nav>
+
+@code {
+    private bool collapseNavMenu = true;
+    private string? NavBarCssClass => collapseNavMenu ? null : "show";
+    private string? NavButtonCssClass => collapseNavMenu ? "collapsed" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

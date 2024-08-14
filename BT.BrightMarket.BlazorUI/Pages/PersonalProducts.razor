@@ -1,0 +1,357 @@
+﻿@page "/personal-products"
+@using BT.BrightMarket.BlazorUI.Interfaces;
+@using BT.BrightMarket.Shared.Models.Products
+
+@inject IProductService productService
+@inject IImageService imageService
+@inject NavigationManager NavigationManager
+
+<!-- product deletion dialog -->
+<div class="modal" style="display: @(showConfirmation ? "block" : "none") ">
+    <div class="modal-content">
+        <span class="close" @onclick="CloseConfirmation">&times;</span>
+        @if (selectedProduct != null)
+        {
+            <p>Weet u zeker dat u "@selectedProduct.Name" wilt verwijderen?</p>
+        }
+        <div style="margin-top: -10px;">
+            <button class="modal-button yes-button" @onclick="DeleteProduct">
+                Ja <i class="fas fa-trash-alt yes-button-icon"></i>
+            </button>
+            <button class="modal-button no-button" @onclick="CloseConfirmation">Nee</button>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="title-section">
+        <h3>Mijn aanbiedingen</h3>
+@*         <button class="button" style="margin-left: 15px;" @onclick="@CreateNewProduct">
+            Toevoegen
+            <i class="fas fa-plus icon" style="font-size: small;"></i>
+        </button> *@
+    </div>
+
+    <div class="products-container">
+
+        @* PRODUCTEN *@
+        <div class="product(s)">
+            <div class="title-section">
+                <h4>Persoonlijke producten</h4>
+                <button class="button" style="margin-left: 15px;" @onclick="@CreateNewProduct">
+                    Toevoegen
+                    <i class="fas fa-plus icon" style="font-size: small;"></i>
+                </button>
+            </div>
+
+            <div class="products">
+                @if (allProducts.Where(p => p.ItemType == ItemType.Product) != null)
+                {
+                    @foreach (var product in allProducts.Where(p => p.ItemType == ItemType.Product))
+                    {
+
+                        <div class="product">
+                            <div class="image-section">
+                                <!-- show image or loading icon -->
+                                @if (product.FirstImage != null)
+                                {
+                                    <img class="product-image" src="@($"data:image;base64,{product.FirstImage.Data}")" alt="Product Image">
+                                }
+                                else
+                                {
+                                    <div class="loading-indicator">
+                                        <i class="fas fa-circle-notch fa-spin loading-icon"></i>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="info-section">
+                                <div style="min-height: 100%;">
+
+                                    <button class="remove-button" @onclick="() => IntermediateDeleteProduct(product.Id)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+
+                                    <h5>@product.Name <span class="euro-symbol">€</span>@product.Price</h5>
+
+                                    <!-- show number of days left for visibility -->
+                                    @if (DateTime.UtcNow.Date < product.ExpiryDate.Date)
+                                    {
+                                        <p style="margin-left: 10px; margin-top: -5px; margin-bottom: 10px;">Het product blijft nog <span style="font-weight: bold;">@Math.Ceiling((product.ExpiryDate - DateTime.UtcNow).TotalDays - 1) dag(en)</span> zichtbaar.</p>
+                                        <button class="edit-button" @onclick="() => EditProduct(product.Id)">
+                                            Bewerk
+                                            <i class="fas fa-angle-right icon"></i>
+                                        </button>
+                                    }
+
+                                    <!-- show that the product has been deactivated -->
+                                    @if (DateTime.UtcNow.Date >= product.ExpiryDate.Date)
+                                    {
+                                        <p style="margin-left: 10px; margin-top: -5px; margin-bottom: 10px;">Het product blijft nog <span style="font-weight: bold; color: red;">0 dag(en)</span> zichtbaar.</p>
+                                        <button class="reload-button" @onclick="() => Reactivate(product.Id)">
+                                            Heractiveer
+                                            <i class="fas fa-sync-alt icon"></i>
+                                        </button>
+                                    }
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+
+                @if (allProducts.Where(p => p.ItemType == ItemType.Product).Count() <= 0)
+                {
+                    <div class="empty-product">
+                        U hebt geen enkel product, maak nu eentje aan!
+                    </div>
+                }
+
+            </div>
+        </div>
+
+        @* DIENSTEN *@
+        <div class="service(s)">
+            <div class="title-section" style="margin-top: 15px;">
+                <h4>Persoonlijke diensten</h4>
+            </div>
+
+            <div class="products">
+                @if (allProducts.Where(p => p.ItemType == ItemType.Service) != null)
+                {
+                    @foreach (var product in allProducts.Where(p => p.ItemType == ItemType.Service))
+                    {
+
+                        <div class="product">
+                            <div class="image-section">
+                                <!-- show image or loading icon -->
+                                @if (product.FirstImage != null)
+                                {
+                                    <img class="product-image" src="@($"data:image;base64,{product.FirstImage.Data}")" alt="Product Image">
+                                }
+                                else
+                                {
+                                    <div class="loading-indicator">
+                                        <i class="fas fa-circle-notch fa-spin loading-icon"></i>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="info-section">
+                                <div style="min-height: 100%;">
+
+                                    <button class="remove-button" @onclick="() => IntermediateDeleteProduct(product.Id)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+
+                                    <h5>@product.Name <span class="euro-symbol">€</span>@product.Price</h5>
+
+                                    <!-- show number of days left for visibility -->
+                                    @if (DateTime.UtcNow.Date < product.ExpiryDate.Date)
+                                    {
+                                        <p style="margin-left: 10px; margin-top: -5px; margin-bottom: 10px;">De dienst blijft nog <span style="font-weight: bold;">@Math.Ceiling((product.ExpiryDate - DateTime.UtcNow).TotalDays - 1) dag(en)</span> zichtbaar.</p>
+                                        <button class="edit-button" @onclick="() => EditProduct(product.Id)">
+                                            Bewerk
+                                            <i class="fas fa-angle-right icon"></i>
+                                        </button>
+                                    }
+
+                                    <!-- show that the product has been deactivated -->
+                                    @if (DateTime.UtcNow.Date >= product.ExpiryDate.Date)
+                                    {
+                                        <p style="margin-left: 10px; margin-top: -5px; margin-bottom: 10px;">De dienst blijft nog <span style="font-weight: bold; color: red;">0 dag(en)</span> zichtbaar.</p>
+                                        <button class="reload-button" @onclick="() => Reactivate(product.Id)">
+                                            Heractiveer
+                                            <i class="fas fa-sync-alt icon"></i>
+                                        </button>
+                                    }
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+
+                @if (allProducts.Where(p => p.ItemType == ItemType.Service).Count() <= 0)
+                {
+                    <div class="empty-product">
+                        U hebt geen enkel dienst, maak nu eentje aan!
+                    </div>
+                }
+
+            </div>
+        </div>
+
+        @* ZOEKERTJES *@
+        <div class="request(s)">
+            <div class="title-section" style="margin-top: 15px;">
+                <h4>Persoonlijke zoekertjes</h4>
+            </div>
+
+            <div class="products">
+                @if (allProducts.Where(p => p.ItemType == ItemType.Request) != null)
+                {
+                    @foreach (var product in allProducts.Where(p => p.ItemType == ItemType.Request))
+                    {
+
+                        <div class="product">
+                            <div class="image-section">
+                                <!-- show image or loading icon -->
+                                @if (product.FirstImage != null)
+                                {
+                                    <img class="product-image" src="@($"data:image;base64,{product.FirstImage.Data}")" alt="Product Image">
+                                }
+                                else
+                                {
+                                    <div class="loading-indicator">
+                                        <i class="fas fa-circle-notch fa-spin loading-icon"></i>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="info-section">
+                                <div style="min-height: 100%;">
+
+                                    <button class="remove-button" @onclick="() => IntermediateDeleteProduct(product.Id)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+
+                                    <h5>@product.Name <span class="euro-symbol">€</span>@product.Price</h5>
+
+                                    <!-- show number of days left for visibility -->
+                                    @if (DateTime.UtcNow.Date < product.ExpiryDate.Date)
+                                    {
+                                        <p style="margin-left: 10px; margin-top: -5px; margin-bottom: 10px;">Het zoekertje blijft nog <span style="font-weight: bold;">@Math.Ceiling((product.ExpiryDate - DateTime.UtcNow).TotalDays - 1) dag(en)</span> zichtbaar.</p>
+                                        <button class="edit-button" @onclick="() => EditProduct(product.Id)">
+                                            Bewerk
+                                            <i class="fas fa-angle-right icon"></i>
+                                        </button>
+                                    }
+
+                                    <!-- show that the product has been deactivated -->
+                                    @if (DateTime.UtcNow.Date >= product.ExpiryDate.Date)
+                                    {
+                                        <p style="margin-left: 10px; margin-top: -5px; margin-bottom: 10px;">Het zoekertje blijft nog <span style="font-weight: bold; color: red;">0 dag(en)</span> zichtbaar.</p>
+                                        <button class="reload-button" @onclick="() => Reactivate(product.Id)">
+                                            Heractiveer
+                                            <i class="fas fa-sync-alt icon"></i>
+                                        </button>
+                                    }
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+
+                @if (allProducts.Where(p => p.ItemType == ItemType.Request).Count() <= 0)
+                {
+                    <div class="empty-product">
+                        U hebt geen enkel zoekertje, maak nu eentje aan!
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@code {
+
+    private List<Product> allProducts;
+    private Product selectedProduct;
+
+    private bool showConfirmation = false; // bool to determine delete dialog visibility
+    private int productIdToDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        allProducts = await productService.GetPersonalProductsAsync(ItemType.Undefined);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // re-render products list after 20 products are fetched
+        int counter = 0;
+        foreach (var product in allProducts)
+        {
+            product.FirstImage = await GetFirstProductImage(product.Id); // might be optimized
+            counter++;
+
+            if (counter == 20)
+            {
+                StateHasChanged();
+            }
+        }
+
+    }
+
+    private async Task<Image> GetFirstProductImage(int productId)
+    {
+        try
+        {
+            return await imageService.GetFirstImageByProductId(productId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error retrieving image for product ID {productId}: {ex.Message}");
+            return new Image();
+        }
+    }
+
+    private void IntermediateDeleteProduct(int productId)
+    {
+        selectedProduct = allProducts.FirstOrDefault(p => p.Id == productId);
+        productIdToDelete = productId;
+        showConfirmation = true;
+    }
+
+    private async Task DeleteProduct()
+    {
+        try
+        {
+            await productService.DeleteProductAsync(productIdToDelete);
+            allProducts.RemoveAll(p => p.Id == productIdToDelete);
+            CloseConfirmation();
+        } catch (Exception ex) { }
+    }
+
+    private async Task Reactivate(int productId)
+    {
+        try
+        {
+            var updatedProduct = await productService.UpdateProductCreationDateAsync(productId);
+
+            var index = allProducts.FindIndex(p => p.Id == productId); // find product index to be re-activated in allProducts list
+            if (index != -1) // check product existance
+            {
+                if (updatedProduct != null) // update information of the product
+                {
+                    allProducts[index] = updatedProduct;
+                    allProducts[index].FirstImage = await GetFirstProductImage(productId);
+                }
+            }
+            StateHasChanged();
+
+        } catch (Exception ex) { }
+    }
+
+    private void CloseConfirmation()
+    {
+        showConfirmation = false; // close delete dialog
+        StateHasChanged();
+    }
+
+    private void EditProduct(int userId)
+    {
+        NavigationManager.NavigateTo($"/personal-products/edit-product/{userId}");
+    }
+
+    private void CreateNewProduct()
+    {
+        NavigationManager.NavigateTo("/personal-products/create-product");
+    }
+
+}

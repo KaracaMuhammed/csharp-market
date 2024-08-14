@@ -1,0 +1,50 @@
+﻿@page "/fetchdata"
+@using System.Net.Http.Headers
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject HttpClient httpClient
+@inject IAccessTokenProvider AccessTokenProvider
+
+<button @onclick="SendRequest">Send HTTP Request to WeatherForecast</button>
+<p style="margin-top: 5px;">@responseMessage</p>
+
+<p>------------------BEARER TOKEN--------------------</p>
+<textarea value="@accessToken" rows="15" cols="125"></textarea>
+
+@code {
+    private string responseMessage;
+    private string accessToken;
+
+    private async Task SendRequest()
+    {
+        try
+        {
+            var tokenResult = await AccessTokenProvider.RequestAccessToken(
+                new AccessTokenRequestOptions
+                    {
+                        Scopes = new[] { "api://040cb84f-bafd-43c2-b40c-2e8ee3f609e9/access_as_user" }
+                    });
+
+            if (!tokenResult.TryGetToken(out var token))
+                throw new Exception("Error: Access token not available");
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Value);
+
+            accessToken = token.Value;
+
+            var response = await httpClient.GetAsync("http://localhost:5000/api/v1/Regions");
+
+            response.EnsureSuccessStatusCode();
+            responseMessage = await response.Content.ReadAsStringAsync();
+        }
+        catch (AccessTokenNotAvailableException ex)
+        {
+            // Handle access token retrieval error
+            responseMessage = $"Error: {ex.Message}";
+        }
+        catch (HttpRequestException ex)
+        {
+            // Handle HTTP request error
+            responseMessage = $"Error: {ex.Message}";
+        }
+    }
+}

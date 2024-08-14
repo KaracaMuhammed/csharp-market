@@ -1,0 +1,28 @@
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build-env
+WORKDIR /app
+
+# Copy only the project file first to utilize Docker's layer caching
+COPY ["BT.BrightMarket.BlazorUI/BT.BrightMarket.BlazorUI.csproj", "BT.BrightMarket.BlazorUI/"]
+
+# Restore NuGet packages using the project file
+RUN dotnet restore "BT.BrightMarket.BlazorUI/BT.BrightMarket.BlazorUI.csproj"
+
+# Copy the rest of the files
+COPY . ./
+
+# Build and publish the application
+RUN dotnet publish -c Release -o output
+
+# Build the final image
+FROM nginx:alpine
+WORKDIR /var/www/web
+
+# Copy the published output from the build environment to the web directory
+COPY --from=build-env /app/output/wwwroot .
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Expose ports
+EXPOSE 80
+EXPOSE 443

@@ -1,0 +1,105 @@
+﻿@page "/register"
+
+@using BT.BrightMarket.BlazorUI.Interfaces
+@using BT.BrightMarket.Shared.DTOs
+@using BT.BrightMarket.Shared.Models.Products
+
+@using BT.BrightMarket.Shared.Models.Users;
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using System.ComponentModel.DataAnnotations
+@using FluentValidation.Results
+@using System.Diagnostics;
+@using System.Security.Claims;
+
+@inject HttpClient httpClient
+@inject IAccessTokenProvider AccessTokenProvider
+@inject IUserService userService
+@inject IRegionService regionService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="container">
+
+    <EditForm Model="@newUser" OnValidSubmit="@CreateNewUser">
+
+        <p>Vervolledig uw registratie:</p>
+
+        <DataAnnotationsValidator />
+
+        <label for="email">Email <span style="color: red;">*</span></label><br />
+        <InputText id="email" @bind-Value="@newUser.Email" placeholder="Voer hier jouw e-mailadres in" class="form-control" disabled />
+
+        <label for="name">Naam <span style="color: red;">*</span></label><br />
+        <InputText id="name" @bind-Value="@newUser.Name" placeholder="Voer hier jouw volledige naam in" class="form-control" disabled />
+
+        <label for="category">Regio <span style="color: red;">*</span></label><br />
+        <InputSelect id="category" @bind-Value="@newUser.RegionId" class="form-control">
+            <option value="-1">Kies een regio...</option>
+            @if (allRegions != null)
+            {
+                @foreach (var region in allRegions)
+                {
+                    <option value="@region.Id">@region.Name</option>
+                }
+            }
+        </InputSelect>
+
+        <ValidationSummary />
+
+        <button type="submit" class="edit-button" style="margin-top: 10px;" disabled="@submitting">
+            Registreer
+            <i class="fas fa-angle-right icon" style="animation: rotate 2s linear infinite;"></i>
+        </button>
+
+    </EditForm>
+
+</div>
+
+@code {
+
+    private List<Region> allRegions;
+    private UserDTO.PostUserObject newUser = new UserDTO.PostUserObject() { Role = Role.User, RegionId = -1 };
+    private bool submitting = false; // submit status boolean
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await userService.GetPersonalUserAsync();
+            NavigationManager.NavigateTo("/");
+        } catch (Exception ex) { }
+
+
+        allRegions = await regionService.GetAllRegionsAsync();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        newUser.Email = authState.User.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value;
+        newUser.Name = authState.User.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+
+    }
+
+    private async Task CreateNewUser()
+    {
+
+        try
+        {
+            submitting = true; // submit button disabled
+
+            var response = await userService.CreateUserAsync(newUser);
+
+            if (response != null)
+            {
+                submitting = false;
+                NavigationManager.NavigateTo("/");
+            }
+            else
+            {
+                submitting = false;
+            }
+
+        }
+        catch (Exception ex) { }
+
+    }
+
+}

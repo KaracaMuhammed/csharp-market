@@ -1,0 +1,21 @@
+﻿@page "/profile"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject IAccessTokenProvider AccessTokenProvider
+
+<h1>User Bearer Token</h1>
+
+<button @onclick="GetAccessToken">Get Access Token</button>
+
+<p>Bearer Token: @accessToken</p>
+
+@code {
+    private string accessToken;
+
+    private async Task GetAccessToken()
+    {
+        var tokenResult = await AccessTokenProvider.RequestAccessToken();
+        accessToken = tokenResult.TryGetToken(out var token) ? token.Value : "No access token";
+    }
+}
