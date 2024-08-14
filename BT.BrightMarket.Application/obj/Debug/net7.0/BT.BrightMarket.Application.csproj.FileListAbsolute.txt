@@ -1,0 +1,15 @@
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\obj\Debug\net7.0\BT.BrightMarket.Application.csproj.AssemblyReference.cache
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\obj\Debug\net7.0\BT.BrightMarket.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\obj\Debug\net7.0\BT.BrightMarket.Application.AssemblyInfoInputs.cache
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\obj\Debug\net7.0\BT.BrightMarket.Application.AssemblyInfo.cs
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\obj\Debug\net7.0\BT.BrightMarket.Application.csproj.CoreCompileInputs.cache
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\bin\Debug\net7.0\BT.BrightMarket.Application.deps.json
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\bin\Debug\net7.0\BT.BrightMarket.Application.dll
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\bin\Debug\net7.0\BT.BrightMarket.Application.pdb
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\bin\Debug\net7.0\BT.BrightMarket.Domain.dll
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\bin\Debug\net7.0\BT.BrightMarket.Domain.pdb
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\obj\Debug\net7.0\BT.BrightMarket.Application.csproj.CopyComplete
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\obj\Debug\net7.0\BT.BrightMarket.Application.dll
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\obj\Debug\net7.0\refint\BT.BrightMarket.Application.dll
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\obj\Debug\net7.0\BT.BrightMarket.Application.pdb
+C:\Users\karac\Desktop\csharp-brightest-market\BT.BrightMarket.Application\obj\Debug\net7.0\ref\BT.BrightMarket.Application.dll
